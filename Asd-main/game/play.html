@@ -4853,7 +4853,8 @@ const _isMobile = ('ontouchstart' in window || navigator.maxTouchPoints > 0) &&
   (window.innerWidth < 1200 || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches));
 const _lowPowerDevice = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) ||
   (navigator.deviceMemory && navigator.deviceMemory <= 4) || /Android\s+[1-7]|iPhone|iPad/i.test(navigator.userAgent);
-const _mobileZoomBase = window.innerHeight > window.innerWidth ? 1.38 : 1.24;
+// Mobile view must be farther back than before so the player can see more of the arena.
+const _mobileZoomBase = window.innerHeight > window.innerWidth ? 0.88 : 0.8;
 let ZOOM = _isMobile ? _mobileZoomBase : 0.82;
 let camX = 0, camY = 0, _camReady = false;
 
@@ -5200,7 +5201,7 @@ window.addEventListener('wheel', (e) => {
     return;
   }
   const delta = e.deltaY < 0 ? 0.04 : -0.04;
-  _userZoomMultiplier = Math.max(0.75, Math.min(1.35, _userZoomMultiplier + delta));
+  _userZoomMultiplier = Math.max(0.55, Math.min(1.25, _userZoomMultiplier + delta));
 }, { passive: true });
 
 function _isJoystickUiTouch(touch) {
@@ -5241,7 +5242,7 @@ window.addEventListener('touchmove', (e) => {
     }
     const curDist = Math.hypot(t0.clientX - t1.clientX, t0.clientY - t1.clientY);
     const scale = curDist / _pinchStartDist;
-    _userZoomMultiplier = Math.max(0.75, Math.min(1.35, _pinchStartZoom * scale));
+    _userZoomMultiplier = Math.max(0.55, Math.min(1.25, _pinchStartZoom * scale));
   }
 }, { passive: true });
 
@@ -19684,9 +19685,9 @@ function update(timestamp = 0) {
   }
 
   // ── PC & Mobil Kamera Yakınlığı (mobilde görüş alanı daha geniş, dikey/yatay ekranlarda net görünüm) ──
-  const _mobileViewBias = window.innerHeight > window.innerWidth ? 1.52 : 1.36;
-  const _baseTarget = _onTrain ? (_isMobile ? 0.9 : 0.75) : (_isMobile ? _mobileViewBias : 0.82);
-  const _zoomTarget = Math.max(0.65, Math.min(1.55, _baseTarget * _userZoomMultiplier));
+  const _mobileViewBias = window.innerHeight > window.innerWidth ? 0.92 : 0.86;
+  const _baseTarget = _onTrain ? (_isMobile ? 0.8 : 0.75) : (_isMobile ? _mobileViewBias : 0.82);
+  const _zoomTarget = Math.max(0.5, Math.min(1.35, _baseTarget * _userZoomMultiplier));
   ZOOM += (_zoomTarget - ZOOM) * 0.08;
 
   // ── Kamera Sınır Kelepçesi: Ekran dışı / boşluk asla görünmez ──
