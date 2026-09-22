@@ -4647,15 +4647,43 @@ function onPlayerDeath(playerId) {
   }
 }
 
+function resolveTrapCapturePoint(target, trap) {
+  if (!target || !trap) return { x: Number(target?.x) || 0, y: Number(target?.y) || 0 };
+  const trapX = Number(trap.x) || 0;
+  const trapY = Number(trap.y) || 0;
+  const trapRadius = Number(trap.radius) || 78;
+  const targetX = Number(target.x) || 0;
+  const targetY = Number(target.y) || 0;
+  const dx = targetX - trapX;
+  const dy = targetY - trapY;
+  const dist = Math.hypot(dx, dy) || 1;
+  const orbitRadius = Math.max(18, Math.min(trapRadius - 12, trapRadius - 22));
+  const hash = Array.from(String(target.id || `${targetX}:${targetY}`)).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  const angleBias = ((hash % 997) / 997) * Math.PI * 2;
+  if (dist < 1) {
+    return {
+      x: trapX + Math.cos(angleBias) * orbitRadius,
+      y: trapY + Math.sin(angleBias) * orbitRadius,
+    };
+  }
+  const nx = dx / dist;
+  const ny = dy / dist;
+  return {
+    x: trapX + nx * orbitRadius,
+    y: trapY + ny * orbitRadius,
+  };
+}
+
 function applyTrapVictimState(target, trapId, trapX = target?.x, trapY = target?.y) {
   if (!target || !trapId) return false;
   const trap = buildings.get(trapId);
   if (!trap || trap.type !== 6 || (trap.hp ?? 0) <= 0) {
     return releaseTrapVictim(target.id, trapId);
   }
+  const capturePoint = resolveTrapCapturePoint({ ...target, x: Number.isFinite(Number(trapX)) ? Number(trapX) : (Number(target.x) || 0), y: Number.isFinite(Number(trapY)) ? Number(trapY) : (Number(target.y) || 0) }, trap);
   target.trappedBy = trapId;
-  target.trappedX = Number.isFinite(Number(trapX)) ? normalizeWorldCoord(Number(trapX), target.x || 0) : (Number(target.x) || 0);
-  target.trappedY = Number.isFinite(Number(trapY)) ? normalizeWorldCoord(Number(trapY), target.y || 0) : (Number(target.y) || 0);
+  target.trappedX = normalizeWorldCoord(capturePoint.x, target.x || 0);
+  target.trappedY = normalizeWorldCoord(capturePoint.y, target.y || 0);
   target.x = target.trappedX;
   target.y = target.trappedY;
   target.vx = 0;
