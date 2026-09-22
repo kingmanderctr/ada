@@ -5739,23 +5739,25 @@
         ════════════════════════════════════════════════════════════════ */
         
         const rarityPriceScale = {
-            common: 0.28,
-            rare: 0.9,
-            epic: 1.7,
-            legendary: 2.9,
-            mythic: 5.4
+            common: 0.16,
+            rare: 0.52,
+            epic: 1.15,
+            legendary: 2.4,
+            mythic: 4.6
         };
         const normalizeShopPrice = (value, rarity = 'common') => {
             const base = Number(value || 0);
-            const scale = rarityPriceScale[String(rarity).toLowerCase()] || 1;
+            const key = String(rarity).toLowerCase();
+            const scale = rarityPriceScale[key] || 1;
             const floor = {
-                common: 50,
-                rare: 120,
-                epic: 260,
-                legendary: 600,
-                mythic: 1400
-            }[String(rarity).toLowerCase()] || 80;
-            return Math.max(floor, Math.round(base * scale));
+                common: 25,
+                rare: 80,
+                epic: 180,
+                legendary: 420,
+                mythic: 950
+            }[key] || 60;
+            const normalized = Math.round(base * scale);
+            return Math.max(floor, normalized);
         };
 
         // Oyun içi Karakter Derileri
