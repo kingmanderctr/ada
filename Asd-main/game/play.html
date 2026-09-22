@@ -4834,7 +4834,8 @@ const _isMobile = ('ontouchstart' in window || navigator.maxTouchPoints > 0) &&
   (window.innerWidth < 1200 || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches));
 const _lowPowerDevice = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) ||
   (navigator.deviceMemory && navigator.deviceMemory <= 4) || /Android\s+[1-7]|iPhone|iPad/i.test(navigator.userAgent);
-let ZOOM = _isMobile ? 0.95 : 0.82;
+const _mobileZoomBase = window.innerHeight > window.innerWidth ? 1.14 : 1.08;
+let ZOOM = _isMobile ? _mobileZoomBase : 0.82;
 let camX = 0, camY = 0, _camReady = false;
 
 const WORLD = 7200;
@@ -19701,8 +19702,9 @@ function update(timestamp = 0) {
     camY += (_camTargetY - canvas.height/2 - camY) * _camFactor;
   }
 
-  // ── PC & Mobil Kamera Yakınlığı (yakın kamera, net görüş; otomatik uzaklaşma engellendi) ──
-  const _baseTarget = _onTrain ? (_isMobile ? 0.88 : 0.75) : (_isMobile ? 0.95 : 0.82);
+  // ── PC & Mobil Kamera Yakınlığı (mobilde görüş alanı biraz daha geniş, dikey/yatay ekranlarda net görünüm) ──
+  const _mobileViewBias = window.innerHeight > window.innerWidth ? 1.18 : 1.12;
+  const _baseTarget = _onTrain ? (_isMobile ? 0.9 : 0.75) : (_isMobile ? _mobileViewBias : 0.82);
   const _zoomTarget = Math.max(0.65, Math.min(1.35, _baseTarget * _userZoomMultiplier));
   ZOOM += (_zoomTarget - ZOOM) * 0.08;
 
