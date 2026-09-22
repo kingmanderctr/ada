@@ -21416,7 +21416,7 @@ function initMultiplayer() {
     const _knSub = document.getElementById('kill-notif-sub');
     if (_kn && _knMain) {
       const _streakLabels = ['','','DOUBLE KİLL! 🔥','TRİPLE KİLL! 💥','QUAD KİLL! ⚡','PENTA KİLL! 🌟'];
-      const _sl = player.kills >= 2 ? (_streakLabels[Math.min(player.kills, 5)] || `${player.kills}X KİLL! 🔥`) : 'ELİMİNE EDİLDİ!';
+      const _sl = player.kills >= 2 ? (_streakLabels[Math.min(player.kills, 5)] || `${player.kills}X KİLL! 🔥`) : 'KILL!';
       _knMain.textContent = _sl;
       _knTarget.textContent = '⚔️ ' + targetName;
       _knSub.textContent = `${player.kills}. kill • Skor: ${player.score||0}`;
@@ -25664,10 +25664,17 @@ var _BP_TIERS=[
 ];
 
 var _bpData=(function(){
-  try{var d=JSON.parse(localStorage.getItem('fb_bp_v1')||'null');if(d&&d.s===_curSeason)return d;}catch(e){}
+  try{var d=JSON.parse(localStorage.getItem('fb_bp_v1')||'null');if(d&&d.s===_curSeason){
+    if (!Array.isArray(d.c)) d.c = [];
+    d.c = Array.from(new Set((d.c || []).map(function(v){ return Number(v); }).filter(function(v){ return Number.isFinite(v); })));
+    return d;
+  }}catch(e){}
   return null;
 })() || {s:_curSeason,xp:0,t:0,c:[]};
-function _saveBp(){try{localStorage.setItem('fb_bp_v1',JSON.stringify(_bpData));}catch(e){}}
+function _saveBp(){
+  _bpData.c = Array.from(new Set((Array.isArray(_bpData.c) ? _bpData.c : []).map(function(v){ return Number(v); }).filter(function(v){ return Number.isFinite(v); })));
+  try{localStorage.setItem('fb_bp_v1',JSON.stringify(_bpData));}catch(e){}
+}
 
 function _bpUnlockedTier(){
   var t=0;
@@ -25688,7 +25695,8 @@ function _renderBpPanel(){
   var maxXp = _BP_TIERS[_BP_TIERS.length-1].xp;
   var curXp = Math.min(maxXp, Math.max(0, _bpData.xp || 0));
   var pct = Math.min(100, Math.round((curXp / maxXp) * 100));
-  var claimedCount = Array.isArray(_bpData.c) ? _bpData.c.length : 0;
+  var claimedSet = new Set((Array.isArray(_bpData.c) ? _bpData.c : []).map(function(v){ return Number(v); }).filter(function(v){ return Number.isFinite(v); }));
+  var claimedCount = claimedSet.size;
 
   if (slbl) slbl.textContent = curXp.toLocaleString() + ' / ' + maxXp.toLocaleString() + ' XP';
   if (tsum) tsum.textContent = 'Tier ' + curT + ' / ' + _BP_TIERS.length;
@@ -25698,8 +25706,9 @@ function _renderBpPanel(){
   if (fillEl) fillEl.style.width = pct + '%';
 
   tiersEl.innerHTML = _BP_TIERS.map(function(bt){
+    var tierKey = Number(bt.t);
     var unlocked = _bpData.xp >= bt.xp;
-    var claimed = _bpData.c.includes(bt.t);
+    var claimed = claimedSet.has(tierKey);
     var cls = 'bp-tier-card' + (claimed ? ' claimed' : (unlocked ? ' unlocked' : ''));
 
     var actionHtml = '';
@@ -25725,10 +25734,11 @@ function _renderBpPanel(){
 }
 
 window._bpClaim=function(tier){
-  if(_bpData.c.includes(tier))return;
-  var bt=_BP_TIERS.find(function(b){return b.t===tier;});
+  var tierKey = Number(tier);
+  if (new Set((Array.isArray(_bpData.c) ? _bpData.c : []).map(function(v){ return Number(v); }).filter(Number.isFinite)).has(tierKey)) return;
+  var bt=_BP_TIERS.find(function(b){return Number(b.t)===tierKey;});
   if(!bt||_bpData.xp<bt.xp)return;
-  _bpData.c.push(tier);_saveBp();
+  _bpData.c.push(tierKey); _saveBp();
   if(bt.type==='xp'){_meta.xp+=bt.v;_meta.lv=_metaLevelOf(_meta.xp);_saveMeta();}
   else if(bt.type==='gold'){var g=parseInt(localStorage.getItem('fb_gold')||'0',10)+bt.v;localStorage.setItem('fb_gold',g);}
   if(typeof window._showAchPopup==='function')window._showAchPopup('🎫','Battle Pass Ödülü!',bt.r);
