@@ -3410,6 +3410,43 @@ function compactStateCompressed(state) {
   };
 }
 
+function syncOwnerResourceCollector(owner, building, now = Date.now()) {
+  if (!owner || !building || building.ownerId !== owner.id) return;
+  if (Number(building.type) !== 10 || (building.hp ?? 100) <= 0) return;
+  const lastCollect = Number(building._lastCollectAt || 0);
+  if (now - lastCollect < 3000) return;
+  building._lastCollectAt = now;
+  const tierBoost = Math.max(0, Number(building.tier) || 0);
+  const woodGain = 6 + tierBoost * 2;
+  const stoneGain = 5 + tierBoost * 2;
+  const goldGain = 2 + tierBoost;
+  owner.wood = (owner.wood || 0) + woodGain;
+  owner.stone = (owner.stone || 0) + stoneGain;
+  owner.gold = (owner.gold || 0) + goldGain;
+  owner.score = (owner.score || 0) + 18;
+  if (owner._authUser) {
+    owner._authUser.coins = (owner._authUser.coins || 0) + goldGain;
+    owner._authUser.gold = owner._authUser.coins;
+  }
+  const socket = io.sockets.sockets.get(owner.id);
+  if (socket && socket.connected) {
+    socket.emit('self_state', {
+      g: owner.gold,
+      sc: owner.score,
+      xp: owner.xp,
+      wood: owner.wood,
+      stone: owner.stone,
+      apples: owner.apples,
+      seq: owner.stateSeq || 0,
+      x: owner.x,
+      y: owner.y,
+      hp: owner.hp,
+      hpSeq: owner.hpSeq || 0,
+      hpAt: owner.hpAt || Date.now()
+    });
+  }
+}
+
 function roomCellKey(x, y) {
   return `${Math.floor((Number(x) || 0) / 1800)},${Math.floor((Number(y) || 0) / 1800)}`;
 }
@@ -6039,6 +6076,13 @@ setInterval(() => {
     }
   }
 
+  // 1b. Resource collector buildings: owner keeps inventory ticking in sync with the world.
+  for (const building of buildings.values()) {
+    if (!building || Number(building.type) !== 10 || (building.hp ?? 100) <= 0) continue;
+    const owner = players.get(building.ownerId);
+    if (owner && (owner.hp ?? 0) > 0) syncOwnerResourceCollector(owner, building, Date.now());
+  }
+
   // 2. Periodic self_state confirmation (1Hz) — economy & vitals only, NO stale position overrides
   for (const [id, p] of players) {
     if (!p || (p.hp ?? 0) <= 0) continue;
@@ -6047,11 +6091,38 @@ setInterval(() => {
       s.emit('self_state', {
         hp: p.hp, hpSeq: p.hpSeq || 0, hpAt: p.hpAt || 0,
         sc: p.score, g: p.gold, xp: p.xp, seq: p.stateSeq || 0,
-        wood: p.wood, stone: p.stone, apples: p.apples
+        wood: p.wood, stone: p.stone, apples: p.apples,
+        x: p.x, y: p.y, a: p.angle || 0
       });
     }
   }
 }, 1000);
+
+setInterval(() => {
+  for (const [id, p] of players) {
+    if (!p || (p.hp ?? 0) <= 0) continue;
+    const s = io.sockets.sockets.get(id);
+    if (!s || !s.connected) continue;
+    s.volatile.emit('self_state', {
+      x: p.x,
+      y: p.y,
+      a: p.angle || 0,
+      hp: p.hp,
+      hpSeq: p.hpSeq || 0,
+      hpAt: p.hpAt || Date.now(),
+      sc: p.score,
+      g: p.gold,
+      xp: p.xp,
+      wood: p.wood,
+      stone: p.stone,
+      apples: p.apples,
+      seq: p.stateSeq || 0,
+      trappedBy: p.trappedBy || null,
+      trappedX: p.trappedX ?? null,
+      trappedY: p.trappedY ?? null
+    });
+  }
+}, 80);
 
 setInterval(broadcastMobIds, 2000);
 
