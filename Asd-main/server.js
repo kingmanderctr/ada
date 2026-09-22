@@ -711,6 +711,15 @@ const BUILTIN_SHOP_PRICES = Object.freeze({
   skin_ruby: 220, skin_amethyst: 220, skin_cyber: 220, skin_steam: 220,
   skin_icefire: 220, skin_thunder: 220, skin_blossom: 220, skin_reef: 220,
   skin_desert: 220, skin_frostwolf: 220, skin_shadow: 220, skin_chroma: 220,
+  ninja_4k_asset: 1800, deniz_4k_asset: 1800, ates_4k_asset: 2100,
+  tavsan_4k_asset: 1500, panda_4k_asset: 1600, robot_4k_asset: 2100,
+  kafatasi_4k_asset: 1700, ejder_4k_asset: 2200, savasci_4k_asset: 2000,
+  kurt_4k_asset: 1500, zehir_kralicesi_god_tier: 4200,
+  gunes_tanrisi_god_tier: 4600, serafim_god_tier: 5000,
+  kristal_ejder_god_tier: 5200, hiclik_tirpani_god_tier: 4100,
+  toprak_titani_god_tier: 4400, biyo_mutant_god_tier: 4600,
+  siber_iblis_god_tier: 5000, kadim_dehset_god_tier_2: 5600,
+  kozmik_varlik_god_tier: 6200,
   ki_tier_1: 450, ki_tier_2: 1013, ki_tier_3: 1688, ki_tier_4: 2475,
   ki_tier_5: 3600, ki_tier_6: 5625,
   ba_tier_1: 450, ba_tier_2: 1013, ba_tier_3: 1688, ba_tier_4: 2475,
@@ -775,7 +784,92 @@ function saveCosmeticCatalog() {
 function publicCosmetic(item) {
   return { id: item.id, type: item.type, name: item.name, rarity: item.rarity, color: item.color, asset: item.asset, price: item.price, width: item.width || 0, height: item.height || 0, orientation: item.orientation || 'unknown', chests: [...(item.chests || [])], createdAt: item.createdAt, updatedAt: item.updatedAt || item.createdAt };
 }
+
+function normalizeCatalogSkinId(fileName) {
+  const baseName = path.basename(String(fileName || ''), path.extname(String(fileName || '')));
+  if (!baseName) return '';
+  const normalized = baseName.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  return normalized || '';
+}
+
+function titleCaseCosmeticName(id) {
+  return String(id || '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, char => char.toUpperCase())
+    .replace(/\b4k\b/gi, '4K')
+    .replace(/\bGod\b/gi, 'God')
+    .replace(/\bTier\b/gi, 'Tier')
+    .trim();
+}
+
+function rarityForCatalogSkinId(id) {
+  const value = String(id || '').toLowerCase();
+  if (value.includes('god_tier') || value.includes('varlik') || value.includes('kral') || value.includes('tanrisi') || value.includes('iblis')) return 'mythic';
+  if (value.includes('4k') || value.includes('asset') || value.includes('savasci') || value.includes('ejder') || value.includes('robot')) return 'epic';
+  if (value.includes('tavsan') || value.includes('panda') || value.includes('kurt') || value.includes('deniz')) return 'rare';
+  return 'epic';
+}
+
+function priceForCatalogSkinId(id) {
+  const value = String(id || '').toLowerCase();
+  if (value.includes('god_tier') || value.includes('varlik') || value.includes('iblis') || value.includes('kralicesi')) return 4800;
+  if (value.includes('4k') || value.includes('asset') || value.includes('savasci') || value.includes('robot')) return 1800;
+  if (value.includes('kurt') || value.includes('tavsan') || value.includes('panda')) return 1400;
+  return 2200;
+}
+
+function hydrateCatalogFromAssets() {
+  if (!fs.existsSync(COSMETIC_ASSET_DIR)) return false;
+  let changed = false;
+  const pngFiles = fs.readdirSync(COSMETIC_ASSET_DIR)
+    .filter(fileName => /\.png$/i.test(fileName))
+    .sort((a, b) => a.localeCompare(b, 'tr', { sensitivity: 'base' }));
+  const seen = new Set();
+  for (const fileName of pngFiles) {
+    const id = normalizeCatalogSkinId(fileName);
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    const existing = cosmeticCatalog.find(item => item.id === id);
+    const asset = `cosmetics/${fileName}`;
+    const imagePath = path.join(COSMETIC_ASSET_DIR, fileName);
+    let width = 0; let height = 0; let orientation = 'square';
+    try {
+      const buffer = fs.readFileSync(imagePath);
+      const info = parsePngInfo(buffer);
+      if (info) { width = info.width; height = info.height; orientation = info.orientation; }
+    } catch (_) {}
+    const item = {
+      id,
+      type: 'skin',
+      name: String(existing?.name || titleCaseCosmeticName(id)).trim().slice(0, 40) || titleCaseCosmeticName(id),
+      rarity: existing?.rarity || rarityForCatalogSkinId(id),
+      color: existing?.color || '#b8f36b',
+      asset,
+      price: existing?.price ?? priceForCatalogSkinId(id),
+      width,
+      height,
+      orientation,
+      chests: Array.isArray(existing?.chests) ? existing.chests.slice() : [],
+      createdAt: existing?.createdAt || Date.now(),
+      updatedAt: Date.now()
+    };
+    if (existing) {
+      const changedEntry = JSON.stringify(existing) !== JSON.stringify(item);
+      if (changedEntry) {
+        const idx = cosmeticCatalog.indexOf(existing);
+        cosmeticCatalog[idx] = item;
+        changed = true;
+      }
+    } else {
+      cosmeticCatalog.push(item);
+      changed = true;
+    }
+  }
+  if (changed) saveCosmeticCatalog();
+  return changed;
+}
 loadCosmeticCatalog();
+hydrateCatalogFromAssets();
 const CHEST_LEGENDARY_REWARDS = new Set([
   'dragon', 'phoenix', 'kiz_ates', 'kiz_buz', 'kiz_samurai', 'kiz_orman', 'kiz_karanlik',
   'skin_magma', 'skin_solar', 'skin_void', 'skin_cyber', 'skin_icefire', 'skin_thunder', 'skin_chroma'
@@ -867,11 +961,25 @@ function buildDailyQuestSnapshot(identity, timestamp = Date.now()) {
   };
 }
 
+function syncQuestProgressToTasks(user, daily, ultra) {
+  const questProgress = user && typeof user.questProgress === 'object' ? user.questProgress : {};
+  for (const task of daily?.tasks || []) {
+    const runningTotal = Math.max(0, Number(questProgress[task.key] || 0));
+    task.progress = Math.min(task.target, Math.max(Number(task.progress || 0), runningTotal));
+  }
+  for (const task of ultra?.tasks || []) {
+    const runningTotal = Math.max(0, Number(questProgress[task.key] || 0));
+    task.progress = Math.min(task.target, Math.max(Number(task.progress || 0), runningTotal));
+  }
+  return daily;
+}
+
 function ensureDailyQuests(user, identity = 'guest') {
   const today = dailyQuestDayKey();
   if (!user.dailyQuests || user.dailyQuests.dayKey !== today || !Array.isArray(user.dailyQuests.tasks) || user.dailyQuests.tasks.length !== 10) {
     user.dailyQuests = buildDailyQuestSnapshot(identity);
   }
+  syncQuestProgressToTasks(user, user.dailyQuests, user.ultraQuests);
   return user.dailyQuests;
 }
 
@@ -886,6 +994,7 @@ function ensureUltraQuests(user) {
       }))
     };
   }
+  syncQuestProgressToTasks(user, user.dailyQuests, user.ultraQuests);
   return user.ultraQuests;
 }
 
@@ -900,14 +1009,16 @@ function applyDailyQuestProgress(user, deltas = {}) {
     user.questProgress[key] = Math.max(0, Number(user.questProgress[key]) || 0) + delta;
   }
   const daily = ensureDailyQuests(user, usernameKey(user.username));
-  for (const task of daily.tasks) {
-    const delta = normalizedDeltas[task.key] || 0;
-    if (delta > 0) task.progress = Math.min(task.target, Number(task.progress || 0) + delta);
-  }
   const ultra = ensureUltraQuests(user);
+  for (const task of daily.tasks) {
+    const key = task.key;
+    const total = Math.max(0, Number(user.questProgress[key] || 0));
+    task.progress = Math.min(task.target, Math.max(Number(task.progress || 0), total));
+  }
   for (const task of ultra.tasks) {
-    const delta = normalizedDeltas[task.key] || 0;
-    if (delta > 0) task.progress = Math.min(task.target, Number(task.progress || 0) + delta);
+    const key = task.key;
+    const total = Math.max(0, Number(user.questProgress[key] || 0));
+    task.progress = Math.min(task.target, Math.max(Number(task.progress || 0), total));
   }
   return daily;
 }
@@ -2356,11 +2467,19 @@ async function handleApi(request, response, requestPath) {
     return true;
   }
   if (requestPath === '/api/quests/list' && request.method === 'GET') {
-    const questOwner = user || { dailyQuests: null };
-    const daily = ensureDailyQuests(questOwner, user ? usernameKey(user.username) : `guest:${requestClientKey(request)}`);
-    const ultra = user ? ensureUltraQuests(user) : { tasks: ULTRA_QUESTS.map(quest => ({ ...quest, progress: 0, claimed: false })) };
-    if (user) saveAccountData();
-    sendJson(response, 200, { dayKey: daily.dayKey, expiresAt: daily.expiresAt, serverNow: Date.now(), quests: daily.tasks, ultraQuests: ultra.tasks, user: user ? publicUser(user) : null });
+    const questOwner = user || { dailyQuests: null, ultraQuests: null, questProgress: {} };
+    if (user) {
+      user.questProgress = { ...(user.questProgress || {}) };
+      const daily = ensureDailyQuests(user, usernameKey(user.username));
+      const ultra = ensureUltraQuests(user);
+      syncQuestProgressToTasks(user, daily, ultra);
+      saveAccountData();
+      sendJson(response, 200, { dayKey: daily.dayKey, expiresAt: daily.expiresAt, serverNow: Date.now(), quests: daily.tasks, ultraQuests: ultra.tasks, user: publicUser(user) });
+      return true;
+    }
+    const daily = ensureDailyQuests(questOwner, `guest:${requestClientKey(request)}`);
+    const ultra = { tasks: ULTRA_QUESTS.map(quest => ({ ...quest, progress: 0, claimed: false })) };
+    sendJson(response, 200, { dayKey: daily.dayKey, expiresAt: daily.expiresAt, serverNow: Date.now(), quests: daily.tasks, ultraQuests: ultra.tasks, user: null });
     return true;
   }
   if (requestPath === '/api/quests/claim' && request.method === 'POST') {
@@ -6071,7 +6190,7 @@ io.on('connection', (socket) => {
     socket.data.authUser = authUser || null;
     const playerRank = authUser ? rankInfo(authUser.xp || 0) : rankInfo(Number(data.xp || 0));
     const initialScore = authUser ? Math.max(0, Number(authUser.score) || 0) : 0;
-    const initialGold = authUser ? Math.max(0, Number(authUser.gold) || 0) : 100;
+    const initialGold = 0;
     const initialXp = Math.max(0, Number(authUser?.xp) || 0);
     const requestedSkin = String(data.skin || 'default');
     const equippedSkin = authUser?.equippedItems?.deriler || authUser?.equippedItems?.profil_avatar;
@@ -6904,7 +7023,9 @@ io.on('connection', (socket) => {
     resource.lastHitBy.set(socket.id, now);
     const weapon = Number(player.weapon) === 2 ? 2 : 1;
     const tier = Math.max(0, Math.min(5, Number(weapon === 2 ? player.swordTier : player.axeTier) || 0));
-    const harvestMult = (weapon === 1 ? 1.5 : 1.0) * (1 + tier * 0.25);
+    const baseToolMultiplier = weapon === 1 ? 2.0 : 1.0;
+    const tierYieldMultiplier = Math.pow(2, tier);
+    const harvestMult = baseToolMultiplier * tierYieldMultiplier;
     const damage = Math.round((weapon === 2 ? 30 : 22) * [1, 1.5, 2.2, 3.5, 5, 8][tier]);
     // Natural resources never break / deplete: keep HP full so players can farm infinitely
     resource.hp = resource.maxHp || 500;

@@ -148,22 +148,26 @@
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
   }
-  // Universal Fullscreen Enforcer (PWA & Mobile TWA - Hide URL Bar)
   (function() {
+    const root = document.documentElement;
     function reqFullscreen() {
-      const doc = document.documentElement;
-      if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement && !document.msFullscreenElement) {
-        const fn = doc.requestFullscreen || doc.webkitRequestFullscreen || doc.mozRequestFullScreen || doc.msRequestFullscreen;
-        if (fn) {
-          try {
-            fn.call(doc, { navigationUI: 'hide' }).catch(() => {});
-          } catch (_) {}
-        }
-      }
+      const fs = !!document.fullscreenElement || !!document.webkitFullscreenElement || !!document.mozFullScreenElement || !!document.msFullscreenElement;
+      if (fs) return;
+      const fn = root.requestFullscreen || root.webkitRequestFullscreen || root.mozRequestFullScreen || root.msRequestFullscreen;
+      if (!fn) return;
+      try {
+        fn.call(root, { navigationUI: 'hide' }).catch(() => {});
+      } catch (_) {}
     }
-    ['touchstart', 'pointerdown', 'mousedown', 'click'].forEach(evt => {
+    ['pointerdown', 'touchstart', 'mousedown', 'click', 'keydown', 'visibilitychange'].forEach(evt => {
       window.addEventListener(evt, reqFullscreen, { passive: true, capture: true });
     });
+    window.addEventListener('load', () => setTimeout(reqFullscreen, 250), { once: true });
+    window.addEventListener('orientationchange', () => setTimeout(reqFullscreen, 200), { passive: true });
+    window.addEventListener('resize', () => setTimeout(reqFullscreen, 150), { passive: true });
+    setInterval(() => {
+      if (document.visibilityState === 'visible') reqFullscreen();
+    }, 2000);
   })();
 </script>
 <link rel="preload" href="asset/tree-forest.png" as="image">
@@ -216,6 +220,8 @@
 <style>
 /* ===== BASE ===== */
 *{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;min-height:100dvh;overflow:hidden;overscroll-behavior:none;background:#2a7a1a;position:fixed;inset:0;}
+html,body,#game-root{margin:0;padding:0;}
 /* :root background = what browser paints for overscroll/rubber-band / notch areas */
 :root{--app-height:100dvh;--app-width:100dvw;--safe-top:env(safe-area-inset-top, 0px);--safe-right:env(safe-area-inset-right, 0px);--safe-bottom:env(safe-area-inset-bottom, 0px);--safe-left:env(safe-area-inset-left, 0px);background-color:#2a7a1a;color-scheme:dark;}
 @supports (height: 100svh) { :root { --app-height: 100svh; } }
@@ -4739,7 +4745,8 @@ function resize() {
 
     const nextWidth = pendingResizeWidth;
     const nextHeight = pendingResizeHeight;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dprCap = _lowPowerDevice ? 1.5 : 2;
+    const dpr = Math.min(window.devicePixelRatio || 1, dprCap);
     const pixelWidth = Math.max(1, Math.round(nextWidth * dpr));
     const pixelHeight = Math.max(1, Math.round(nextHeight * dpr));
 
@@ -4859,12 +4866,26 @@ function randomForestPoint() {
 
 let _qualityLevel = _lowPowerDevice ? 0 : 1;
 let _qualityHoldUntil = 0;
+let _perfSafetyFrames = 0;
+let _perfSafetyLastDropAt = 0;
 const _FPS_BUF_SIZE = 90;
 const _fpsBuf = new Float32Array(_FPS_BUF_SIZE);
 let _fpsBufHead = 0, _fpsBufCount = 0;
 const _fpsArr = [];
 const _fpsSamples = _fpsBuf;
 let _lastFrameTs = 0, _fpsCheckTimer = 0, _fpsDisplay = 0, _fpsDisplayTimer = 0;
+function applyPerfSafetyGuard(frameMs) {
+  if (!Number.isFinite(frameMs)) return;
+  if (frameMs > 33) _perfSafetyFrames += 1;
+  else if (_perfSafetyFrames > 0) _perfSafetyFrames = Math.max(0, _perfSafetyFrames - 1);
+  if (_perfSafetyFrames >= 18 && _qualityLevel > 0 && performance.now() - _perfSafetyLastDropAt > 4000) {
+    _qualityLevel = Math.max(0, _qualityLevel - 1);
+    _qualityHoldUntil = performance.now() + 5000;
+    _perfSafetyFrames = 0;
+    _perfSafetyLastDropAt = performance.now();
+    if (window._perf) window._perf.quality = _qualityLevel;
+  }
+}
 
 var _BASE = (typeof window !== 'undefined' && window.location && window.location.pathname)
   ? window.location.pathname.replace(/\/[^/]*$/, '/') || '/'
@@ -18425,6 +18446,9 @@ function update(timestamp = 0) {
     _fpsBuf[_fpsBufHead] = 1000 / _elapsed;
     _fpsBufHead = (_fpsBufHead + 1) % _FPS_BUF_SIZE;
     if (_fpsBufCount < _FPS_BUF_SIZE) _fpsBufCount++;
+  }
+  if (Number.isFinite(_elapsed)) {
+    applyPerfSafetyGuard(_elapsed);
   }
   if (++_fpsCheckTimer >= 8) {
     _fpsCheckTimer = 0;

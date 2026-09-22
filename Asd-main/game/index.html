@@ -76,22 +76,26 @@
             if ('serviceWorker' in navigator) {
                 window.addEventListener('load', () => navigator.serviceWorker.register('sw.js?v=9').catch(() => {}));
             }
-            // Universal Fullscreen Enforcer (PWA & Mobile TWA - Hide URL Bar)
             (function() {
+              const root = document.documentElement;
               function reqFullscreen() {
-                const doc = document.documentElement;
-                if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement && !document.msFullscreenElement) {
-                  const fn = doc.requestFullscreen || doc.webkitRequestFullscreen || doc.mozRequestFullScreen || doc.msRequestFullscreen;
-                  if (fn) {
-                    try {
-                      fn.call(doc, { navigationUI: 'hide' }).catch(() => {});
-                    } catch (_) {}
-                  }
-                }
+                const fs = !!document.fullscreenElement || !!document.webkitFullscreenElement || !!document.mozFullScreenElement || !!document.msFullscreenElement;
+                if (fs) return;
+                const fn = root.requestFullscreen || root.webkitRequestFullscreen || root.mozRequestFullScreen || root.msRequestFullscreen;
+                if (!fn) return;
+                try {
+                  fn.call(root, { navigationUI: 'hide' }).catch(() => {});
+                } catch (_) {}
               }
-              ['touchstart', 'pointerdown', 'mousedown', 'click'].forEach(evt => {
+              ['pointerdown', 'touchstart', 'mousedown', 'click', 'keydown', 'visibilitychange'].forEach(evt => {
                 window.addEventListener(evt, reqFullscreen, { passive: true, capture: true });
               });
+              window.addEventListener('load', () => setTimeout(reqFullscreen, 250), { once: true });
+              window.addEventListener('orientationchange', () => setTimeout(reqFullscreen, 200), { passive: true });
+              window.addEventListener('resize', () => setTimeout(reqFullscreen, 150), { passive: true });
+              setInterval(() => {
+                if (document.visibilityState === 'visible') reqFullscreen();
+              }, 2000);
             })();
         </script>
     <link rel="preload" href="players/wolf.png" as="image">
