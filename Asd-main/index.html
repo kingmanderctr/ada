@@ -5193,7 +5193,25 @@
            1. GERÇEK OYUN VERİLERİ (players/*.png ve weapons/*.png)
         ════════════════════════════════════════════════════════════════ */
         
-        const normalizeShopPrice = (value) => Math.max(220, Math.round(Number(value || 0) * 2.25));
+        const rarityPriceScale = {
+            common: 0.42,
+            rare: 1.1,
+            epic: 2.1,
+            legendary: 4.1,
+            mythic: 7.4
+        };
+        const normalizeShopPrice = (value, rarity = 'common') => {
+            const base = Number(value || 0);
+            const scale = rarityPriceScale[String(rarity).toLowerCase()] || 1;
+            const floor = {
+                common: 80,
+                rare: 220,
+                epic: 520,
+                legendary: 1400,
+                mythic: 2800
+            }[String(rarity).toLowerCase()] || 120;
+            return Math.max(floor, Math.round(base * scale));
+        };
 
         // Oyun içi Karakter Derileri
         const REAL_SKINS = [
@@ -5248,7 +5266,7 @@
                 ['skin_shadow', 'Gölge Pençesi', 'epic', '#a58aff', '#1d173c', '#e5ddff'],
                 ['skin_chroma', 'Kroma Şampiyonu', 'legendary', '#ff83df', '#30205e', '#ffffff']
             ].map(([id, name, rarity, primary, dark, shine]) => ({ id, name, img: '', rarity, free: false, cost: 1, generated: true, primary, dark, shine }))
-        ].map(item => item.free || item.cost === 0 ? item : { ...item, cost: normalizeShopPrice(item.cost) });
+        ].map(item => item.free || item.cost === 0 ? item : { ...item, cost: normalizeShopPrice(item.cost, item.rarity) });
 
         const GENERATED_SKIN_STYLES = Object.fromEntries(REAL_SKINS.filter(item => item.generated).map(item => [item.id, item]));
         const SKIN_RARITY_ORDER = { common: 0, rare: 1, epic: 2, legendary: 3, mythic: 4 };
