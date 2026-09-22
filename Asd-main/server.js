@@ -39,7 +39,7 @@ const players = new Map();
 const buildings = new Map();
 const rooms = new Map();
 const BUILDING_CELL_SIZE = 180;
-const SERVER_BUILD_LIMITS = { 3: 25, 4: 7, 5: 12, 6: 8, 7: 4, 8: 35, 9: 12, 10: 4 };
+const SERVER_BUILD_LIMITS = { 3: 25, 4: 7, 5: 12, 6: 8, 7: 4, 8: 35, 9: 12, 10: 2 };
 const TRAP_MAX_HP = 240;
 const BUILD_COSTS = { 3: [20, 5, 0], 4: [40, 20, 0], 5: [10, 20, 0], 6: [30, 10, 0], 7: [60, 40, 0], 8: [30, 0, 0], 9: [80, 60, 0], 10: [25, 0, 0] };
 const BUILD_RADII = { 3: 34, 4: 44, 5: 22, 6: 78, 7: 32, 8: 24, 9: 52, 10: 30 };
@@ -5711,7 +5711,7 @@ setInterval(() => {
         pX = Math.round(bot.baseX + Math.cos(a) * bRad);
         pY = Math.round(bot.baseY + Math.sin(a) * bRad);
       } else if (bot.baseStep === 5 && bot.wood >= 25) {
-        placeType = 10; // Campfire
+        placeType = 10; // Resource Machine
         pX = Math.round(bot.baseX + 48);
         pY = Math.round(bot.baseY + 48);
       }
