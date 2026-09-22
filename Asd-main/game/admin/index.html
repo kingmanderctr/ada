@@ -35,6 +35,7 @@
         <button class="nav-btn" data-tab="players" type="button">Oyuncular</button>
         <button class="nav-btn" data-tab="world" type="button">Dünya</button>
         <button class="nav-btn" data-tab="users" type="button">Hesaplar</button>
+        <button class="nav-btn" data-tab="cosmetics" type="button">Kozmetik</button>
         <button class="nav-btn" data-tab="audit" type="button">Loglar</button>
       </nav>
       <div class="admin-content">
@@ -52,6 +53,67 @@
         <section id="tab-players" class="tab-pane hidden"><input id="player-search" placeholder="Oyuncu ara"><span id="player-roster-count"></span><table><tbody id="players-table-body"></tbody></table></section>
         <section id="tab-world" class="tab-pane hidden"><label><input id="cfg-maintenance" type="checkbox"> Bakım modu</label><label><input id="cfg-pvp" type="checkbox" checked> PvP</label><button id="save-world-config-btn" type="button">Kaydet</button></section>
         <section id="tab-users" class="tab-pane hidden"><input id="user-search" placeholder="Hesap ara"><span id="user-total-count"></span><table><tbody id="users-table-body"></tbody></table></section>
+        <section id="tab-cosmetics" class="tab-pane hidden">
+          <div class="toolbar-row">
+            <div class="category-filters">
+              <button class="cat-filter-btn active" data-type="all" type="button">Tümü</button>
+              <button class="cat-filter-btn" data-type="skin" type="button">Deriler</button>
+              <button class="cat-filter-btn" data-type="axe" type="button">Baltalar</button>
+              <button class="cat-filter-btn" data-type="sword" type="button">Kılıçlar</button>
+            </div>
+            <div class="hud-pill"><span class="pulse-indicator"></span> <span id="cosmetic-catalog-count">0 / 0 Kozmetik</span></div>
+          </div>
+
+          <div class="cosmetic-upload-panel">
+            <form id="cosmetic-editor-form" class="cosmetic-upload-form">
+              <div class="cosmetic-upload-preview">
+                <div class="cosmetic-preview-stage has-image" id="cosmetic-editor-preview-stage">
+                  <img id="cosmetic-editor-preview" src="" alt="Kozmetik Önizleme">
+                </div>
+                <div class="cosmetic-upload-status" id="cosmetic-editor-meta">Seçilen kozmetiği düzenlemek için kartı seç.</div>
+              </div>
+
+              <div class="cosmetic-upload-fields">
+                <div class="input-group">
+                  <label class="input-label" for="cosmetic-editor-id">Kozmetik ID</label>
+                  <input id="cosmetic-editor-id" class="custom-input" type="text" readonly>
+                </div>
+                <div class="input-group">
+                  <label class="input-label" for="cosmetic-editor-name">Ad</label>
+                  <input id="cosmetic-editor-name" class="custom-input" type="text" placeholder="Örnek: Emerald Skin">
+                </div>
+                <div class="input-group">
+                  <label class="input-label" for="cosmetic-editor-type">Tür</label>
+                  <select id="cosmetic-editor-type" class="custom-select">
+                    <option value="skin">skin</option>
+                    <option value="axe">axe</option>
+                    <option value="sword">sword</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label class="input-label" for="cosmetic-editor-rarity">Rarity</label>
+                  <select id="cosmetic-editor-rarity" class="custom-select">
+                    <option value="common">common</option>
+                    <option value="rare">rare</option>
+                    <option value="epic">epic</option>
+                    <option value="legendary">legendary</option>
+                    <option value="mythic">mythic</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label class="input-label" for="cosmetic-editor-price">Fiyat (Altın)</label>
+                  <input id="cosmetic-editor-price" class="custom-input" type="number" min="0" step="1" value="1000">
+                </div>
+                <div class="cosmetic-upload-actions">
+                  <button id="cosmetic-editor-delete" class="btn-danger-outline" type="button">Sil</button>
+                  <button id="cosmetic-editor-save" class="btn-primary btn-block" type="submit">Değişiklikleri Kaydet</button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <div id="cosmetics-gallery-grid" class="cosmetics-grid"></div>
+        </section>
         <section id="tab-audit" class="tab-pane hidden"><div id="full-audit-timeline"></div></section>
       </div>
     </section>

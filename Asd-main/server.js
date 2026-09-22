@@ -2014,13 +2014,15 @@ async function handleApi(request, response, requestPath) {
     if (!itemId || !COSMETIC_TYPES.has(body.type) || !COSMETIC_RARITIES.has(body.rarity)) { sendJson(response, 400, { error: 'ID, tür veya rarity geçersiz.' }); return true; }
     const item = { id: itemId, type: body.type, name: String(body.name || itemId).trim().slice(0, 40), rarity: body.rarity, color: String(body.color || '#b8f36b').slice(0, 20), asset: String(body.asset || `players/${itemId}.png`).trim().slice(0, 160), price: Math.max(0, Math.min(1000000, Number(body.price) || 0)), chests: Array.isArray(body.chests) ? body.chests.filter(chestId => Object.prototype.hasOwnProperty.call(CHEST_CONFIG, chestId)) : [], createdAt: Date.now() };
     const existing = cosmeticCatalog.findIndex(entry => entry.id === itemId);
-    if (existing >= 0) cosmeticCatalog[existing] = item;
-    else cosmeticCatalog.push(item);
+    const nextItem = { ...item, createdAt: existing >= 0 && cosmeticCatalog[existing]?.createdAt ? cosmeticCatalog[existing].createdAt : Date.now(), updatedAt: Date.now() };
+    if (existing >= 0) cosmeticCatalog[existing] = nextItem;
+    else cosmeticCatalog.push(nextItem);
     for (const [chestId, chest] of Object.entries(CHEST_CONFIG)) chest.rewards = chest.rewards.filter(reward => reward !== itemId);
-    for (const chestId of item.chests) if (!CHEST_CONFIG[chestId].rewards.includes(itemId)) CHEST_CONFIG[chestId].rewards.push(itemId);
+    for (const chestId of nextItem.chests) if (!CHEST_CONFIG[chestId].rewards.includes(itemId)) CHEST_CONFIG[chestId].rewards.push(itemId);
     saveCosmeticCatalog();
-    ownerAudit(existing >= 0 ? 'cosmetic_updated' : 'cosmetic_created', { username: session.username, itemId, type: item.type, rarity: item.rarity });
-    sendJson(response, 200, { ok: true, item: publicCosmetic(item) });
+    ownerAudit(existing >= 0 ? 'cosmetic_updated' : 'cosmetic_created', { username: session.username, itemId, type: nextItem.type, rarity: nextItem.rarity, price: nextItem.price });
+    broadcastCosmeticCatalog(existing >= 0 ? 'updated' : 'created', nextItem);
+    sendJson(response, 200, { ok: true, item: publicCosmetic(nextItem), items: cosmeticCatalog.map(publicCosmetic) });
     return true;
   }
   if (requestPath === '/api/owner/config' && (request.method === 'GET' || request.method === 'POST')) {

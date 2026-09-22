@@ -211,7 +211,7 @@
     broadcast: 'Duyuru & Oyun İçi Yayın Stüdyosu',
     world: 'Dünya Kuralları & Dinamik Ayarlar',
     users: 'Kayıtlı Oyuncu Hesapları & Moderasyon',
-    cosmetics: 'Kozmetik Envanteri & Sandık Havuzları',
+    cosmetics: 'Kozmetik Envanteri & Fiyat / Rarity Yönetimi',
     audit: 'Güvenlik Logları & Aktif Yasaklamalar'
   };
 
@@ -1388,10 +1388,107 @@
       const data = await api('/api/owner/cosmetics');
       state.cosmeticsData = data;
       renderCosmeticsGallery();
+      if (state.selectedCosmeticId) {
+        const selected = (data.items || []).find(item => item.id === state.selectedCosmeticId);
+        if (selected) fillCosmeticEditor(selected);
+      }
     } catch (err) {
       showToast(err.message, 'error');
     }
   }
+
+  state.selectedCosmeticId = null;
+
+  function fillCosmeticEditor(item) {
+    const idInput = $('#cosmetic-editor-id');
+    const nameInput = $('#cosmetic-editor-name');
+    const typeInput = $('#cosmetic-editor-type');
+    const rarityInput = $('#cosmetic-editor-rarity');
+    const priceInput = $('#cosmetic-editor-price');
+    const preview = $('#cosmetic-editor-preview');
+    const meta = $('#cosmetic-editor-meta');
+
+    if (!item) {
+      if (idInput) idInput.value = '';
+      if (nameInput) nameInput.value = '';
+      if (typeInput) typeInput.value = 'skin';
+      if (rarityInput) rarityInput.value = 'common';
+      if (priceInput) priceInput.value = '1000';
+      if (preview) preview.removeAttribute('src');
+      if (meta) meta.textContent = 'Seçilen kozmetiği düzenlemek için kartı seç.';
+      return;
+    }
+
+    state.selectedCosmeticId = item.id;
+    if (idInput) idInput.value = item.id || '';
+    if (nameInput) nameInput.value = item.name || item.id || '';
+    if (typeInput) typeInput.value = item.type || 'skin';
+    if (rarityInput) rarityInput.value = item.rarity || 'common';
+    if (priceInput) priceInput.value = String(Number(item.price || 0));
+    if (preview) {
+      const assetPath = item.asset ? `../${item.asset}` : '';
+      preview.src = assetPath;
+      preview.alt = item.name || item.id;
+      preview.style.display = assetPath ? 'block' : 'none';
+    }
+    if (meta) {
+      meta.textContent = `${item.type} · ${item.rarity} · ${Number(item.width || 0)} × ${Number(item.height || 0)} px`;
+    }
+  }
+
+  $('#cosmetic-editor-delete')?.addEventListener('click', async () => {
+    const itemId = $('#cosmetic-editor-id')?.value?.trim();
+    if (!itemId) return;
+    if (!confirm(`${itemId} kozmetiği silinsin mi?`)) return;
+    try {
+      await api('/api/owner/cosmetics', {
+        method: 'DELETE',
+        body: JSON.stringify({ id: itemId })
+      });
+      state.selectedCosmeticId = null;
+      fillCosmeticEditor(null);
+      await loadCosmetics();
+      showToast('Kozmetik silindi ve oyun kataloğundan kaldırıldı.');
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  });
+
+  $('#cosmetic-editor-form')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const itemId = $('#cosmetic-editor-id')?.value?.trim();
+    if (!itemId) {
+      showToast('Önce bir kozmetik seç.', 'error');
+      return;
+    }
+
+    const selected = (state.cosmeticsData?.items || []).find(item => item.id === itemId) || null;
+    const payload = {
+      id: itemId,
+      name: $('#cosmetic-editor-name')?.value?.trim() || itemId,
+      type: $('#cosmetic-editor-type')?.value || selected?.type || 'skin',
+      rarity: $('#cosmetic-editor-rarity')?.value || selected?.rarity || 'common',
+      price: Number($('#cosmetic-editor-price')?.value || 0),
+      asset: selected?.asset || '',
+      color: selected?.color || '#b8f36b',
+      chests: selected?.chests || []
+    };
+
+    try {
+      const data = await api('/api/owner/cosmetics', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      if (data?.item) {
+        state.selectedCosmeticId = data.item.id;
+        fillCosmeticEditor(data.item);
+        await loadCosmetics();
+      }
+      showToast('Kozmetik kaydedildi ve oyundaki katalog güncellendi.');
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  });
 
   let cosmeticUploadData = '';
   const cosmeticUploadForm = $('#cosmetic-upload-form');
@@ -1501,7 +1598,7 @@
     }
 
     grid.innerHTML = filtered.map(item => `
-      <div class="cosmetic-card">
+      <div class="cosmetic-card" data-cosmetic-id="${escapeHtml(item.id)}">
         <div class="cosmetic-thumb-wrap">
           <img class="cosmetic-img" src="../${item.asset}" onerror="this.outerHTML='🎭'" alt="${escapeHtml(item.name)}">
         </div>
@@ -1509,9 +1606,24 @@
         <span class="cosmetic-rarity-badge rarity-${item.rarity}">${item.rarity}</span>
         <div class="cosmetic-meta">🪙 ${Number(item.price || 0).toLocaleString('tr-TR')} Altın</div>
         <div class="cosmetic-orientation">${String(item.orientation || 'unknown').toUpperCase()} · ${Number(item.width || 0)} × ${Number(item.height || 0)}px</div>
-        <button type="button" class="btn-danger cosmetic-delete-btn" data-cosmetic-id="${escapeHtml(item.id)}">PNG'yi kaldır</button>
+        <div class="cosmetic-upload-actions" style="justify-content: center; margin-top: 12px;">
+          <button type="button" class="btn-secondary cosmetic-select-btn" data-cosmetic-id="${escapeHtml(item.id)}">Düzenle</button>
+          <button type="button" class="btn-danger cosmetic-delete-btn" data-cosmetic-id="${escapeHtml(item.id)}">Sil</button>
+        </div>
       </div>
     `).join('');
+
+    $$('.cosmetic-select-btn', grid).forEach(button => {
+      button.addEventListener('click', () => {
+        const item = (state.cosmeticsData?.items || []).find(entry => entry.id === button.dataset.cosmeticId);
+        if (item) {
+          fillCosmeticEditor(item);
+          const form = $('#cosmetic-editor-form');
+          form?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      });
+    });
+
     $$('.cosmetic-delete-btn', grid).forEach(button => button.addEventListener('click', () => deleteCosmetic(button.dataset.cosmeticId)));
   }
 
