@@ -4305,7 +4305,7 @@ function drawSkinEyesOverlay(c, R, sk, fl) {
     <div class="inv-slot" id="slot-10">
       <span class="slot-num">0</span>
       <canvas class="inv-icon-canvas" id="icanv-10" width="40" height="40"></canvas>
-      <span class="slot-label">Kamp Ateşi</span>
+      <span class="slot-label">Kaynak Makinesi</span>
     </div>
     <!-- FOOD / YEMEK SLOTU (Dokununca / Tıklayınca Can Doldurur) -->
     <div class="inv-slot slot-food" id="slot-food" title="Yemek Ye / Can Doldur (E Tuşu)" onclick="eatApple();" ontouchstart="event.preventDefault(); event.stopPropagation(); eatApple();">
@@ -8893,17 +8893,12 @@ if (_foodSlotEl) {
 // ============================================================
 function eatApple() {
   if (!player || player.dead) return;
-  const now = Date.now();
-  if (player._fruitUseUntil && now < player._fruitUseUntil) {
-    floatingTexts.push({ x: player.x, y: player.y - 45, text: 'Meyve Dinleniyor…', alpha: 1, life: 22, color: '#ffbb55' });
-    return;
-  }
   if (player.apples > 0 && player.hp < player.maxHp) {
     player.apples--;
     const healAmt = 25;
     player.hp = Math.min(player.maxHp, player.hp + healAmt);
-    player._fruitUseUntil = now + 650;
-    player._foodUseVisualUntil = now + 650;
+    player._fruitUseUntil = 0;
+    player._foodUseVisualUntil = 0;
     if (_connected && _socket) _socket.emit('eat_apple');
     updateHpBar();
     updateUI();
@@ -20674,6 +20669,7 @@ function _drawDashFx() {
 }
 
 function _doDash() {
+  _releaseActiveJoysticks();
   if (_dashOnCd || _isDying) return;
   _dashOnCd = true;
   const _dBtn = document.getElementById('dash-btn');
@@ -20704,8 +20700,9 @@ function _doDash() {
     if (!el || el.dataset.actionReady === '1') return;
     el.dataset.actionReady = '1';
     const handler = (e) => {
-      if (e.cancelable) e.preventDefault();
-      e.stopPropagation();
+      if (e && e.cancelable) e.preventDefault();
+      if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+      _releaseActiveJoysticks();
       action();
     };
     el.addEventListener('pointerdown', handler, { passive: false });

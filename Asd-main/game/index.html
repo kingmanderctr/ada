@@ -5739,22 +5739,22 @@
         ════════════════════════════════════════════════════════════════ */
         
         const rarityPriceScale = {
-            common: 0.42,
-            rare: 1.1,
-            epic: 2.1,
-            legendary: 4.1,
-            mythic: 7.4
+            common: 0.28,
+            rare: 0.9,
+            epic: 1.7,
+            legendary: 2.9,
+            mythic: 5.4
         };
         const normalizeShopPrice = (value, rarity = 'common') => {
             const base = Number(value || 0);
             const scale = rarityPriceScale[String(rarity).toLowerCase()] || 1;
             const floor = {
-                common: 80,
-                rare: 220,
-                epic: 520,
-                legendary: 1400,
-                mythic: 2800
-            }[String(rarity).toLowerCase()] || 120;
+                common: 50,
+                rare: 120,
+                epic: 260,
+                legendary: 600,
+                mythic: 1400
+            }[String(rarity).toLowerCase()] || 80;
             return Math.max(floor, Math.round(base * scale));
         };
 
@@ -5788,38 +5788,18 @@
             { id: 'kiz_orman',   name: 'Orman Muhafızı',  img: 'players/kiz_orman.png',   rarity: 'legendary', free: false, cost: 1500 },
             { id: 'kiz_deniz',   name: 'Deniz Savaşçısı', img: 'players/kiz_deniz.png',   rarity: 'legendary', free: false, cost: 1600 },
             { id: 'kiz_sakura',  name: 'Sakura Çiçeği',   img: 'players/kiz_sakura.png',  rarity: 'legendary', free: false, cost: 1700 },
-            { id: 'kiz_karanlik',name: 'Karanlık Cadı',   img: 'players/kiz_karanlik.png',rarity: 'legendary', free: false, cost: 2400 },
-            ...[
-                ['skin_aurora', 'Aurora Muhafızı', 'epic', '#65f5d8', '#164c68', '#d8fff5'],
-                ['skin_storm', 'Fırtına Ruhu', 'epic', '#79a9ff', '#1a2d72', '#e5efff'],
-                ['skin_magma', 'Magma Golemi', 'legendary', '#ff704d', '#6d160e', '#ffe0a3'],
-                ['skin_void', 'Boşluk Gezgini', 'legendary', '#bd7cff', '#241044', '#f4d9ff'],
-                ['skin_solar', 'Güneş Şövalyesi', 'legendary', '#ffd45a', '#9b3e10', '#fff5b8'],
-                ['skin_moon', 'Ay Muhafızı', 'epic', '#b6c8ff', '#293768', '#f0f4ff'],
-                ['skin_emerald', 'Zümrüt Avcısı', 'rare', '#64e08a', '#18542e', '#dcffe5'],
-                ['skin_sapphire', 'Safir Savaşçı', 'rare', '#55c7ef', '#144f78', '#d8f7ff'],
-                ['skin_ruby', 'Yakut Kralı', 'epic', '#ff5c70', '#6d1425', '#ffe1e5'],
-                ['skin_amethyst', 'Ametist Büyücüsü', 'epic', '#d081ff', '#4b1c72', '#f6ddff'],
-                ['skin_cyber', 'Siber Avcı', 'legendary', '#5affd1', '#123638', '#d8fff7'],
-                ['skin_steam', 'Buhar Pilotu', 'rare', '#d8a878', '#5a3420', '#fff0d4'],
-                ['skin_icefire', 'Buzateş Ejderi', 'legendary', '#75eaff', '#6c2416', '#fff0bf'],
-                ['skin_thunder', 'Gök Gürültüsü', 'legendary', '#fff06a', '#3b327d', '#ffffdc'],
-                ['skin_blossom', 'Çiçek Ruh', 'rare', '#ff9fc7', '#6b2851', '#ffe7f2'],
-                ['skin_reef', 'Mercan Savaşçısı', 'rare', '#6de0c0', '#1a5960', '#d9fff6'],
-                ['skin_desert', 'Çöl Yağmacısı', 'common', '#e6b35f', '#70401b', '#fff0b0'],
-                ['skin_frostwolf', 'Buzkurdu', 'epic', '#b7ecff', '#254d72', '#f0fcff'],
-                ['skin_shadow', 'Gölge Pençesi', 'epic', '#a58aff', '#1d173c', '#e5ddff'],
-                ['skin_chroma', 'Kroma Şampiyonu', 'legendary', '#ff83df', '#30205e', '#ffffff']
-            ].map(([id, name, rarity, primary, dark, shine]) => ({ id, name, img: '', rarity, free: false, cost: 1, generated: true, primary, dark, shine }))
+            { id: 'kiz_karanlik',name: 'Karanlık Cadı',   img: 'players/kiz_karanlik.png',rarity: 'legendary', free: false, cost: 2400 }
         ].map(item => item.free || item.cost === 0 ? item : { ...item, cost: normalizeShopPrice(item.cost, item.rarity) });
 
-        const GENERATED_SKIN_STYLES = Object.fromEntries(REAL_SKINS.filter(item => item.generated).map(item => [item.id, item]));
         const SKIN_RARITY_ORDER = { common: 0, rare: 1, epic: 2, legendary: 3, mythic: 4 };
-        let SHOP_SKINS = [...REAL_SKINS].sort((first, second) =>
-            (SKIN_RARITY_ORDER[first.rarity] ?? 99) - (SKIN_RARITY_ORDER[second.rarity] ?? 99) ||
-            first.cost - second.cost ||
-            first.name.localeCompare(second.name, 'tr-TR')
-        );
+        const GENERATED_SKIN_STYLES = {};
+        let SHOP_SKINS = [...REAL_SKINS]
+            .filter(item => item && item.img && item.img.trim() !== '')
+            .sort((first, second) =>
+                (SKIN_RARITY_ORDER[first.rarity] ?? 99) - (SKIN_RARITY_ORDER[second.rarity] ?? 99) ||
+                (Number(first.cost) || 0) - (Number(second.cost) || 0) ||
+                first.name.localeCompare(second.name, 'tr-TR')
+            );
 
         // Oyun İçi El/Kol Renkleri Haritası (play.html ile %100 aynı)
         const SKIN_ARM_COLORS = {
@@ -5898,6 +5878,8 @@
             baltalar: REAL_AXES
         };
 
+        // Only real asset-backed skins appear in the shop; generated canvas-only cosmetics are intentionally excluded.
+
         function mergeServerCosmetics(items) {
             const serverSkins = (Array.isArray(items) ? items : [])
                 .filter(item => item && item.type === 'skin' && item.id && item.asset)
@@ -5911,11 +5893,13 @@
                 }));
             const byId = new Map(REAL_SKINS.map(item => [item.id, item]));
             serverSkins.forEach(item => byId.set(item.id, item));
-            SHOP_SKINS = [...byId.values()].sort((first, second) =>
-                (SKIN_RARITY_ORDER[first.rarity] ?? 99) - (SKIN_RARITY_ORDER[second.rarity] ?? 99) ||
-                first.cost - second.cost ||
-                first.name.localeCompare(second.name, 'tr-TR')
-            );
+            SHOP_SKINS = [...byId.values()]
+                .filter(item => item && item.img && item.img.trim() !== '')
+                .sort((first, second) =>
+                    (SKIN_RARITY_ORDER[first.rarity] ?? 99) - (SKIN_RARITY_ORDER[second.rarity] ?? 99) ||
+                    (Number(first.cost) || 0) - (Number(second.cost) || 0) ||
+                    first.name.localeCompare(second.name, 'tr-TR')
+                );
             ALL_ITEMS_MAP.deriler = SHOP_SKINS.filter(item => Number(item.cost) > 0);
             COSMETIC_ITEMS_MAP.deriler = SHOP_SKINS;
             serverSkins.forEach(item => getLoadedImage(item.img));
@@ -8300,7 +8284,7 @@
                     `;
                 } else if (isCompleted) {
                     actionHtml = `
-                        <button id="claim-${q.id}" onclick="claimQuestReward('${q.id}', '${_challengeTab}')" class="btn-3d btn-play px-3 py-2 font-io text-xs stroke-text shadow-lg animate-pulse min-w-[72px]">
+                        <button id="claim-${q.id}" data-quest-id="${q.id}" onclick="claimQuestReward('${q.id}', '${_challengeTab}')" class="btn-3d btn-play px-3 py-2 font-io text-xs stroke-text shadow-lg animate-pulse min-w-[72px] quest-claim-ready">
                             AL 🎁
                         </button>
                     `;
@@ -8432,37 +8416,53 @@
 
         function showRewardFingerHint(selector) {
             hideRewardFingerHint();
-            const target = document.querySelector(selector);
-            if (!target) return;
-            target.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
-            target.classList.add('reward-claim-focus');
-            const hint = document.createElement('div');
-            hint.className = 'reward-finger-hint';
-            hint.setAttribute('aria-hidden', 'true');
-            document.body.appendChild(hint);
-            _rewardFingerTarget = target;
-            const placeHint = () => {
-                const rect = target.getBoundingClientRect();
-                const hintSize = 36;
-                const left = Math.max(8, Math.min(window.innerWidth - hintSize - 8, rect.left + (rect.width - hintSize) / 2));
-                const top = Math.max(8, Math.min(window.innerHeight - hintSize - 8, rect.bottom + 3));
-                hint.style.left = `${left}px`;
-                hint.style.top = `${top}px`;
-            };
-            _rewardFingerPositionHandler = placeHint;
-            window.addEventListener('resize', placeHint, { passive: true });
-            window.addEventListener('scroll', placeHint, { passive: true, capture: true });
-            requestAnimationFrame(placeHint);
-            _rewardFingerTimer = setTimeout(() => {
-                hint.remove();
-                target.classList.remove('reward-claim-focus');
-                if (_rewardFingerPositionHandler === placeHint) {
-                    window.removeEventListener('resize', placeHint);
-                    window.removeEventListener('scroll', placeHint, true);
-                    _rewardFingerPositionHandler = null;
+            const targets = [...document.querySelectorAll(selector)];
+            if (!targets.length) return;
+
+            let index = 0;
+            const showTarget = (target) => {
+                target.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
+                target.classList.add('reward-claim-focus');
+                const hint = document.createElement('div');
+                hint.className = 'reward-finger-hint';
+                hint.setAttribute('aria-hidden', 'true');
+                document.body.appendChild(hint);
+                _rewardFingerTarget = target;
+                const placeHint = () => {
+                    const rect = target.getBoundingClientRect();
+                    const hintSize = 36;
+                    const left = Math.max(8, Math.min(window.innerWidth - hintSize - 8, rect.left + (rect.width - hintSize) / 2));
+                    const top = Math.max(8, Math.min(window.innerHeight - hintSize - 8, rect.bottom + 3));
+                    hint.style.left = `${left}px`;
+                    hint.style.top = `${top}px`;
+                };
+                _rewardFingerPositionHandler = placeHint;
+                window.addEventListener('resize', placeHint, { passive: true });
+                window.addEventListener('scroll', placeHint, { passive: true, capture: true });
+                requestAnimationFrame(placeHint);
+                const finish = () => {
+                    hint.remove();
+                    target.classList.remove('reward-claim-focus');
+                    if (_rewardFingerPositionHandler === placeHint) {
+                        window.removeEventListener('resize', placeHint);
+                        window.removeEventListener('scroll', placeHint, true);
+                        _rewardFingerPositionHandler = null;
+                    }
+                    if (_rewardFingerTarget === target) _rewardFingerTarget = null;
+                };
+                if (targets.length > 1) {
+                    _rewardFingerTimer = setTimeout(() => {
+                        finish();
+                        index += 1;
+                        if (index < targets.length) {
+                            showTarget(targets[index]);
+                        }
+                    }, 1200);
+                } else {
+                    _rewardFingerTimer = setTimeout(() => finish(), 6000);
                 }
-                if (_rewardFingerTarget === target) _rewardFingerTarget = null;
-            }, 6000);
+            };
+            showTarget(targets[index]);
         }
 
         function renderRewardCollectibles(items) {
@@ -8494,10 +8494,10 @@
                 const dailyTasks = _authToken ? (questData.quests || []) : mergeGuestRewardProgress(questData.quests || []);
                 const ultraTasks = _authToken ? (questData.ultraQuests || []) : mergeGuestRewardProgress(questData.ultraQuests || []);
                 if (dailyTasks.some(task => !task.claimed && Number(task.progress || 0) >= Number(task.target || 1))) {
-                    next.push({ kind: 'daily-quest', icon: '🎯', label: 'Günlük görev ödülü hazır', open: () => { openModal('challengesModal'); setChallengeTab('daily'); updateChallengeProgress().then(() => showRewardFingerHint('#challenge-list .btn-3d')); } });
+                    next.push({ kind: 'daily-quest', icon: '🎯', label: 'Günlük görev ödülü hazır', open: () => { openModal('challengesModal'); setChallengeTab('daily'); updateChallengeProgress().then(() => setTimeout(() => showRewardFingerHint('#challenge-list .quest-claim-ready'), 120)); } });
                 }
                 if (ultraTasks.some(task => !task.claimed && Number(task.progress || 0) >= Number(task.target || 1))) {
-                    next.push({ kind: 'ultra-quest', icon: '🏆', label: 'Uzun vadeli ödül hazır', open: () => { openModal('challengesModal'); setChallengeTab('ultra'); updateChallengeProgress().then(() => showRewardFingerHint('#challenge-list .btn-3d')); } });
+                    next.push({ kind: 'ultra-quest', icon: '🏆', label: 'Uzun vadeli ödül hazır', open: () => { openModal('challengesModal'); setChallengeTab('ultra'); updateChallengeProgress().then(() => setTimeout(() => showRewardFingerHint('#challenge-list .quest-claim-ready'), 120)); } });
                 }
             } catch (_) {}
 

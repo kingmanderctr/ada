@@ -3188,13 +3188,13 @@ function serveStatic(request, response, requestPath) {
   if (normalized === '/admin.html' || normalized === '/game/admin.html') {
     requestPath = '/admin/index.html';
   }
-  else if (normalized === '/admin.css') {
+  else if (normalized === '/admin.css' || normalized === '/game/admin.css') {
     requestPath = '/admin/admin.css';
   }
-  else if (normalized === '/admin.js') {
+  else if (normalized === '/admin.js' || normalized === '/game/admin.js') {
     requestPath = '/admin/admin.js';
   }
-  else if (normalized === '/admin/index.html') {
+  else if (normalized === '/admin/index.html' || normalized === '/game/admin/index.html') {
     requestPath = '/admin/index.html';
   }
   else if (normalized === '/favicon.ico') {
@@ -3586,7 +3586,7 @@ function relayToOthers(socket, event, payload) {
   socket.broadcast.emit(event, payload);
 }
 
-const MAX_MOBS = 120;
+const MAX_MOBS = 42;
 const MOB_RADIUS = 36;
 const MOB_AGGRO_RANGE = 420;
 const MOB_SPEED = 24;
@@ -5013,16 +5013,16 @@ setInterval(() => {
       target = null;
     }
     if (!target) {
-      let nearestDistance = MOB_AGGRO_RANGE * MOB_AGGRO_RANGE;
-      for (const candidate of players.values()) {
-        if (!isMobTargetEligible(mob, candidate)) continue;
-        const dx = candidate.x - mob.x, dy = candidate.y - mob.y;
-        const distance = dx * dx + dy * dy;
-        if (distance < nearestDistance) { target = candidate; nearestDistance = distance; }
-      }
-      if (target) {
-        mob.targetId = target.id;
-        mob.chaseUntil = now + MOB_CHASE_TIMEOUT;
+      // Passive mobs remain neutral unless provoked by damage, trap, or an active lock-on.
+      // This prevents random auto-agro from spawning fights without a player action.
+      if (mob.targetId && players.has(mob.targetId)) {
+        const prior = players.get(mob.targetId);
+        if (prior && (prior.hp ?? 0) > 0 && !prior._dead) {
+          target = prior;
+          mob.chaseUntil = now + MOB_CHASE_TIMEOUT;
+        } else {
+          mob.targetId = null;
+        }
       }
     }
     const isEnraged = (mob.hp ?? mob.maxHp) < mob.maxHp * 0.4;
@@ -5498,7 +5498,7 @@ setInterval(() => {
 
   const now = Date.now();
   const realConnectedCount = [...io.sockets.sockets.values()].filter(s => s.connected && !s.data?.isSpectator).length;
-  const targetBotCount = Math.max(4, Math.min(18, 18 - realConnectedCount));
+  const targetBotCount = Math.max(2, Math.min(8, 8 - realConnectedCount));
 
   if (botList.size < targetBotCount) {
     createBot();
@@ -7126,9 +7126,9 @@ io.on('connection', (socket) => {
     resource.lastHitBy.set(socket.id, now);
     const weapon = Number(player.weapon) === 2 ? 2 : 1;
     const tier = Math.max(0, Math.min(5, Number(weapon === 2 ? player.swordTier : player.axeTier) || 0));
-    const baseToolMultiplier = weapon === 1 ? 2.0 : 1.0;
-    const tierYieldMultiplier = Math.pow(2, tier);
-    const harvestMult = baseToolMultiplier * tierYieldMultiplier;
+    const axeTierYield = [1, 2, 4, 7, 11, 16, 22][tier] || 1;
+    const swordTierYield = [1, 1, 2, 3, 5, 8, 12][tier] || 1;
+    const harvestMult = weapon === 1 ? axeTierYield : swordTierYield;
     const damage = Math.round((weapon === 2 ? 30 : 22) * [1, 1.5, 2.2, 3.5, 5, 8][tier]);
     // Natural resources never break / deplete: keep HP full so players can farm infinitely
     resource.hp = resource.maxHp || 500;
@@ -7305,8 +7305,7 @@ io.on('connection', (socket) => {
   socket.on('eat_apple', () => {
     if (socketEventRateLimited(socket, 'eat_apple')) return;
     const player = players.get(socket.id);
-    if (player && player.hp > 0 && player.apples > 0 && Date.now() - (player.lastAppleAt || 0) >= 700 && player.hp < (player.maxHp ?? 250)) {
-      player.lastAppleAt = Date.now();
+    if (player && player.hp > 0 && player.apples > 0 && player.hp < (player.maxHp ?? 250)) {
       player.apples--;
       player.hp = Math.min(player.maxHp ?? 250, (player.hp ?? 0) + 30);
       player.hpSeq = (player.hpSeq || 0) + 1;
