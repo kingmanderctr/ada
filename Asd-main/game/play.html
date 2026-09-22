@@ -4834,7 +4834,7 @@ const _isMobile = ('ontouchstart' in window || navigator.maxTouchPoints > 0) &&
   (window.innerWidth < 1200 || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches));
 const _lowPowerDevice = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) ||
   (navigator.deviceMemory && navigator.deviceMemory <= 4) || /Android\s+[1-7]|iPhone|iPad/i.test(navigator.userAgent);
-const _mobileZoomBase = window.innerHeight > window.innerWidth ? 1.14 : 1.08;
+const _mobileZoomBase = window.innerHeight > window.innerWidth ? 1.38 : 1.24;
 let ZOOM = _isMobile ? _mobileZoomBase : 0.82;
 let camX = 0, camY = 0, _camReady = false;
 
@@ -13545,104 +13545,65 @@ function drawBuilding(b, ghost) {
       }), -70, -80);
     }
 
-  } else if (b.type === 10) { // ══ CAMPFIRE / KAMP ATEŞİ — different fire type per tier (Gölgesiz) ══
-    const cf_t=b.life;
-    ctx.drawImage(_getBldSC('cf_'+_bTier, 80, 80, 40, 40, (c) => {
-      switch(_bTier) {
-        case 0: { // Tahta — simple crossed logs + stone ring
-          c.fillStyle='#888'; c.strokeStyle='#444'; c.lineWidth=1.5;
-          for(let i=0;i<8;i++){const a=i/8*Math.PI*2;c.save();c.translate(Math.cos(a)*18,Math.sin(a)*18);c.rotate(a);c.beginPath();c.ellipse(0,0,5,3.5,0,0,Math.PI*2);c.fill();c.stroke();c.restore();}
-          c.strokeStyle='#5a3010'; c.lineWidth=6; c.lineCap='round';
-          c.beginPath();c.moveTo(-14,8);c.lineTo(14,-6);c.stroke();
-          c.beginPath();c.moveTo(14,8);c.lineTo(-14,-6);c.stroke();
-          break; }
-        case 1: { // Altın — gold stone pit (ornate ring + cross logs + gold stones)
-          c.fillStyle='#FFD700'; c.strokeStyle='#5a3000'; c.lineWidth=2;
-          for(let i=0;i<6;i++){const a=i*Math.PI/3;c.save();c.translate(Math.cos(a)*18,Math.sin(a)*18);c.rotate(a);c.beginPath();c.ellipse(0,0,7,5,0,0,Math.PI*2);c.fill();c.stroke();c.restore();}
-          c.strokeStyle='#6b4010'; c.lineWidth=6; c.lineCap='round';
-          c.beginPath();c.moveTo(-14,8);c.lineTo(14,-6);c.stroke();
-          c.beginPath();c.moveTo(14,8);c.lineTo(-14,-6);c.stroke();
-          c.strokeStyle='#8B5E3C'; c.lineWidth=4;
-          c.beginPath();c.moveTo(0,10);c.lineTo(0,-10);c.stroke();
-          c.fillStyle='#fff9c4';
-          for(let i=0;i<4;i++){const a=i*Math.PI/2;c.beginPath();c.arc(Math.cos(a)*18,Math.sin(a)*18,3.5,0,Math.PI*2);c.fill();}
-          break; }
-        case 2: { // Elmas — crystal blue-flame fire (crystal ring + glowing gem logs)
-          c.fillStyle='rgba(179,229,252,0.6)'; c.strokeStyle='#0288d1'; c.lineWidth=2;
-          for(let i=0;i<6;i++){const a=i*Math.PI/3;c.save();c.translate(Math.cos(a)*18,Math.sin(a)*18);c.rotate(a+Math.PI/2);c.fillStyle='rgba(179,229,252,0.9)';c.strokeStyle='#0288d1';c.lineWidth=1;c.beginPath();c.moveTo(-3,5);c.lineTo(0,-8);c.lineTo(3,5);c.closePath();c.fill();c.stroke();c.restore();}
-          c.strokeStyle='#1565c0'; c.lineWidth=5; c.lineCap='round';
-          c.beginPath();c.moveTo(-14,8);c.lineTo(14,-6);c.stroke();
-          c.beginPath();c.moveTo(14,8);c.lineTo(-14,-6);c.stroke();
-          c.strokeStyle='rgba(179,229,252,0.7)'; c.lineWidth=3;
-          c.beginPath();c.moveTo(-12,8);c.lineTo(12,-6);c.stroke();
-          c.beginPath();c.moveTo(12,8);c.lineTo(-12,-6);c.stroke();
-          c.fillStyle='rgba(179,229,252,0.9)'; c.beginPath(); c.moveTo(-4,-8); c.lineTo(0,-16); c.lineTo(4,-8); c.closePath(); c.fill();
-          break; }
-        case 3: { // Ametist — runic altar flame (stone ring + carved runes + altar stones)
-          c.fillStyle='#4a148c'; c.strokeStyle='#aa00ff'; c.lineWidth=2;
-          for(let i=0;i<6;i++){const a=i*Math.PI/3;c.save();c.translate(Math.cos(a)*18,Math.sin(a)*18);c.rotate(a);c.beginPath();c.ellipse(0,0,7,5,0,0,Math.PI*2);c.fill();c.stroke();c.fillStyle='#ea80fc';c.beginPath();c.moveTo(-2,-3);c.lineTo(0,-8);c.lineTo(2,-3);c.closePath();c.fill();c.restore();}
-          // runic ring
-          c.strokeStyle='rgba(234,128,252,0.5)'; c.lineWidth=1.5; c.beginPath(); c.arc(0,0,14,0,Math.PI*2); c.stroke();
-          c.strokeStyle='rgba(206,147,216,0.4)'; c.lineWidth=1;
-          for(let i=0;i<6;i++){const a=i*Math.PI/3;c.beginPath();c.moveTo(Math.cos(a)*6,Math.sin(a)*6);c.lineTo(Math.cos(a)*14,Math.sin(a)*14);c.stroke();}
-          // dark altar logs
-          c.strokeStyle='#4a148c'; c.lineWidth=5; c.lineCap='round';
-          c.beginPath();c.moveTo(-12,8);c.lineTo(12,-6);c.stroke();
-          c.beginPath();c.moveTo(12,8);c.lineTo(-12,-6);c.stroke();
-          c.fillStyle='#ea80fc'; c.beginPath(); c.arc(0,0,5,0,Math.PI*2); c.fill();
-          c.fillStyle='rgba(74,20,140,0.8)'; c.beginPath(); c.arc(0,0,3,0,Math.PI*2); c.fill();
-          break; }
-        case 4: { // Reidite — ancient bonfire on altar stones (3 standing stones + tech log)
-          // 3 standing stones
-          for(const[sx,sy,sw,sh] of[[-16,-4,8,14],[8,-4,8,14],[-4,-12,10,8]]){
-            c.fillStyle='#2e7d32'; c.strokeStyle='#003300'; c.lineWidth=2;
-            c.beginPath(); c.roundRect(sx,sy,sw,sh,2); c.fill(); c.stroke();
-            // circuit line on stone
-            c.strokeStyle='#00e676'; c.lineWidth=1;
-            c.beginPath(); c.moveTo(sx+2,sy+2); c.lineTo(sx+sw-2,sy+sh-2); c.stroke();
-          }
-          c.strokeStyle='#00c853'; c.lineWidth=5; c.lineCap='round';
-          c.beginPath();c.moveTo(-14,8);c.lineTo(14,-6);c.stroke();
-          c.beginPath();c.moveTo(14,8);c.lineTo(-14,-6);c.stroke();
-          // green reidite stones ring
-          c.fillStyle='#66bb6a'; c.strokeStyle='#003300'; c.lineWidth=1.5;
-          for(let i=0;i<6;i++){const a=i*Math.PI/3;c.save();c.translate(Math.cos(a)*18,Math.sin(a)*18);c.rotate(a);c.beginPath();c.ellipse(0,0,6,4,0,0,Math.PI*2);c.fill();c.stroke();c.fillStyle='#b9f6ca';c.beginPath();c.arc(0,-2,2,0,Math.PI*2);c.fill();c.restore();}
-          break; }
-        case 5: { // Nihai — celestial star beacon (8 crystal columns + rainbow center)
-          // 8 gem crystal columns
-          for(let i=0;i<8;i++){
-            const a=i*Math.PI/4; c.save(); c.translate(Math.cos(a)*20,Math.sin(a)*20); c.rotate(a+Math.PI/2);
-            const hue=i/8*360; c.fillStyle=`hsla(${hue},100%,72%,0.9)`; c.strokeStyle=`hsla(${hue},100%,82%,0.6)`; c.lineWidth=1;
-            c.beginPath(); c.moveTo(-3,4); c.lineTo(0,-10); c.lineTo(3,4); c.closePath(); c.fill(); c.stroke();
-            c.restore();
-          }
-          // inner mandala platform
-          c.strokeStyle='rgba(197,202,233,0.5)'; c.lineWidth=1.5; c.beginPath(); c.arc(0,0,14,0,Math.PI*2); c.stroke();
-          c.strokeStyle='rgba(197,202,233,0.3)'; c.lineWidth=1;
-          for(let i=0;i<8;i++){const a=i*Math.PI/4;c.beginPath();c.moveTo(0,0);c.lineTo(Math.cos(a)*12,Math.sin(a)*12);c.stroke();}
-          // rainbow logs
-          for(let i=0;i<2;i++){
-            const hue1=i*180, hue2=(i*180+120)%360;
-            const gl=c.createLinearGradient(-14,8+i*4,14,-6+i*4); gl.addColorStop(0,`hsl(${hue1},100%,60%)`); gl.addColorStop(1,`hsl(${hue2},100%,60%)`);
-            c.strokeStyle=gl; c.lineWidth=5; c.lineCap='round';
-            c.beginPath(); c.moveTo(-14,8+i*4-(i?16:0)); c.lineTo(14,-6+i*4-(i?16:0)); c.stroke();
-          }
-          break; }
-      }
+  } else if (b.type === 10) { // ══ RESOURCE MACHINE / KAYNAK MAKİNESİ — gathers wood, stone, gold in a compact machine form ══
+    const pulse = 0.5 + 0.5 * Math.sin((b.life || 0) * 0.16);
+    ctx.drawImage(_getBldSC('cf_'+_bTier, 100, 100, 50, 50, (c) => {
+      // base platform
+      const baseGrad = c.createLinearGradient(-28, -28, 28, 28);
+      baseGrad.addColorStop(0, '#5a4a36');
+      baseGrad.addColorStop(0.5, '#3d2d1d');
+      baseGrad.addColorStop(1, '#2a1d14');
+      c.fillStyle = baseGrad;
+      c.strokeStyle = '#1f120a';
+      c.lineWidth = 3;
+      c.beginPath(); c.roundRect(-28, -24, 56, 48, 7); c.fill(); c.stroke();
+
+      // collector body
+      c.fillStyle = '#c8b18a';
+      c.strokeStyle = '#5b3c1d';
+      c.lineWidth = 2.4;
+      c.beginPath(); c.roundRect(-16, -20, 32, 26, 5); c.fill(); c.stroke();
+
+      // glowing core / crystal
+      const coreGlow = c.createRadialGradient(0, -8, 0, 0, -8, 18);
+      coreGlow.addColorStop(0, `rgba(255, 234, 138, ${0.95 + pulse * 0.05})`);
+      coreGlow.addColorStop(0.55, `rgba(255, 180, 60, ${0.72 + pulse * 0.18})`);
+      coreGlow.addColorStop(1, 'rgba(255, 110, 0, 0)');
+      c.fillStyle = coreGlow;
+      c.beginPath(); c.arc(0, -8, 16, 0, Math.PI * 2); c.fill();
+
+      c.fillStyle = '#f7d37d';
+      c.strokeStyle = '#8d5312';
+      c.lineWidth = 1.3;
+      c.beginPath(); c.moveTo(-9, -8); c.lineTo(0, -18); c.lineTo(9, -8); c.closePath(); c.fill(); c.stroke();
+
+      // side pipes / gather vents
+      c.strokeStyle = '#d5c2a0';
+      c.lineWidth = 2;
+      c.beginPath(); c.moveTo(-22, -4); c.lineTo(-12, -4); c.stroke();
+      c.beginPath(); c.moveTo(12, -4); c.lineTo(22, -4); c.stroke();
+      c.beginPath(); c.moveTo(-22, 10); c.lineTo(-12, 10); c.stroke();
+      c.beginPath(); c.moveTo(12, 10); c.lineTo(22, 10); c.stroke();
+
+      // bottom support legs
+      c.strokeStyle = '#7c5d3a';
+      c.lineWidth = 2;
+      c.beginPath(); c.moveTo(-18, 22); c.lineTo(-18, 28); c.stroke();
+      c.beginPath(); c.moveTo(0, 22); c.lineTo(0, 30); c.stroke();
+      c.beginPath(); c.moveTo(18, 22); c.lineTo(18, 28); c.stroke();
+
+      // resource markers
+      c.fillStyle = '#abf7c9'; c.beginPath(); c.arc(-20, -12, 3.5, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#ffc86a'; c.beginPath(); c.arc(0, -18, 3.2, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#d7b6ff'; c.beginPath(); c.arc(20, -12, 3.5, 0, Math.PI * 2); c.fill();
     }), -30, -30);
-    // Dynamic: animated fire
-    const cf_fl=Math.sin(cf_t*0.15)*3, cf_fl2=Math.sin(cf_t*0.22+1)*2;
-    const og10=ctx.createRadialGradient(0,-5+cf_fl,0,0,0,22);
-    og10.addColorStop(0,tpA+'f2');og10.addColorStop(0.4,tpAD+'cc');og10.addColorStop(1,'rgba(255,30,0,0)');
-    ctx.fillStyle=og10;ctx.beginPath();ctx.ellipse(0,-6+cf_fl,12,18,0,0,Math.PI*2);ctx.fill();
-    const ig10=ctx.createRadialGradient(0,-8+cf_fl2,0,0,-4+cf_fl2,12);
-    ig10.addColorStop(0,'rgba(255,255,220,1)');ig10.addColorStop(0.5,tpA+'cc');ig10.addColorStop(1,'rgba(255,80,0,0)');
-    ctx.save(); if(_qualityLevel>=2){ctx.shadowColor=tpG; ctx.shadowBlur=20;}
-    ctx.fillStyle=ig10;ctx.beginPath();ctx.ellipse(0,-10+cf_fl2,7,13,0,0,Math.PI*2);ctx.fill();ctx.restore();
-    ctx.save();ctx.globalAlpha=0.07;ctx.fillStyle=tpG;ctx.beginPath();ctx.arc(0,0,180,0,Math.PI*2);ctx.fill();ctx.restore();
-    ctx.save();ctx.globalAlpha=0.75;ctx.fillStyle=tpA;ctx.beginPath();
-    for(let i=0;i<4;i++){const ea=cf_t*0.08+i*2.1,er=4+Math.sin(cf_t*0.12+i)*3;ctx.arc(Math.cos(ea)*er,-8+Math.sin(ea)*3,1.5,0,Math.PI*2);}
-    ctx.fill();ctx.restore();
+
+    // faint field aura around resource machine for readability
+    const fieldAlpha = 0.08 + pulse * 0.08;
+    ctx.save();
+    ctx.fillStyle = `rgba(255, 184, 72, ${fieldAlpha})`;
+    ctx.beginPath(); ctx.arc(0, 0, 32, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
   }
 
   ctx.globalAlpha = 1;
@@ -19702,10 +19663,10 @@ function update(timestamp = 0) {
     camY += (_camTargetY - canvas.height/2 - camY) * _camFactor;
   }
 
-  // ── PC & Mobil Kamera Yakınlığı (mobilde görüş alanı biraz daha geniş, dikey/yatay ekranlarda net görünüm) ──
-  const _mobileViewBias = window.innerHeight > window.innerWidth ? 1.18 : 1.12;
+  // ── PC & Mobil Kamera Yakınlığı (mobilde görüş alanı daha geniş, dikey/yatay ekranlarda net görünüm) ──
+  const _mobileViewBias = window.innerHeight > window.innerWidth ? 1.52 : 1.36;
   const _baseTarget = _onTrain ? (_isMobile ? 0.9 : 0.75) : (_isMobile ? _mobileViewBias : 0.82);
-  const _zoomTarget = Math.max(0.65, Math.min(1.35, _baseTarget * _userZoomMultiplier));
+  const _zoomTarget = Math.max(0.65, Math.min(1.55, _baseTarget * _userZoomMultiplier));
   ZOOM += (_zoomTarget - ZOOM) * 0.08;
 
   // ── Kamera Sınır Kelepçesi: Ekran dışı / boşluk asla görünmez ──
