@@ -3200,10 +3200,12 @@ function serveStatic(request, response, requestPath) {
   else if (normalized === '/favicon.ico') {
     requestPath = '/favicon-32.png';
   }
-  else if (normalized === '/ads.txt') {
+  else if (normalized === '/ads.txt' || normalized === '/game/ads.txt' || normalized === '/.well-known/ads.txt') {
     const candidateAds = [
       path.join(root, 'ads.txt'),
-      path.join(__dirname, 'ads.txt')
+      path.join(root, 'game', 'ads.txt'),
+      path.join(__dirname, 'ads.txt'),
+      path.join(__dirname, 'game', 'ads.txt')
     ];
     for (const ca of candidateAds) {
       if (fs.existsSync(ca)) {
